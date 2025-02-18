@@ -2,6 +2,8 @@
   "expo": {
     "name": "xtreative_market",
     "slug": "xtreative_market",
+    "scheme": "xtreativemarket",
+    "platforms": ["ios", "android", "web"],
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
