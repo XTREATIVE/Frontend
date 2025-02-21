@@ -1,22 +1,71 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from "react-native";
 import { useFonts, Poppins_400Regular, Poppins_700Bold } from "@expo-google-fonts/poppins";
 import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordVisible, setPasswordVisible] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
 
   let [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_700Bold });
   if (!fontsLoaded) return null;
 
-  // let [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_700Bold });
-  // if (!fontsLoaded) return null;
+  const validateEmail = (text) => {
+    setEmail(text);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(text)) {
+      setEmailError("Invalid email format");
+    } else {
+      setEmailError("");
+    }
+  };
 
-  const handleLogin = () => {
-    console.log("Email:", email, "Password:", password);
-    // Implement authentication logic here
+  const validatePassword = (text) => {
+    setPassword(text);
+    if (text.length < 6) {
+      setPasswordError("Password must be at least 6 characters");
+    } else {
+      setPasswordError("");
+    }
+  };
+
+  const handleLogin = async () => {
+    if (!email || !password || emailError || passwordError) {
+      Alert.alert("Error", "Please fix errors before signing in.");
+      return;
+    }
+
+    try {
+      const response = await axios.post("http://192.168.28.85:8000/login/", {
+        email,
+        password,
+      });
+
+      if (response.status === 200) {
+        const { token, user } = response.data;
+
+        // Store token securely
+        await AsyncStorage.setItem("authToken", token);
+
+        // Redirect based on user role and approval status
+        if (user.role === "vendor") {
+          if (user.is_approved) {
+            navigation.replace("VendorDashboard"); // Vendor dashboard
+          } else {
+            Alert.alert("Pending Approval", "Your vendor account is not yet approved.");
+          }
+        } else {
+          navigation.replace("HomeScreen"); // Default for customers
+        }
+      }
+    } catch (error) {
+      Alert.alert("Login Failed", error.response?.data?.detail || "Invalid credentials.");
+    }
   };
 
   return (
@@ -32,8 +81,9 @@ const LoginScreen = ({ navigation }) => {
         keyboardType="email-address"
         autoCapitalize="none"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={validateEmail}
       />
+      {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
 
       <View style={styles.passwordContainer}>
         <TextInput
@@ -44,25 +94,26 @@ const LoginScreen = ({ navigation }) => {
           autoCapitalize="none"
           autoCorrect={false}
           value={password}
-          onChangeText={setPassword}
+          onChangeText={validatePassword}
         />
         <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)} style={styles.eyeIcon}>
           <Ionicons name={passwordVisible ? "eye-off-outline" : "eye-outline"} size={24} color="gray" />
         </TouchableOpacity>
       </View>
+      {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
 
       <TouchableOpacity
-        style={[styles.signInButton, (email === "" || password === "") && styles.disabledButton]}
+        style={[styles.signInButton, (emailError || passwordError || !email || !password) && styles.disabledButton]}
         onPress={handleLogin}
-        disabled={email === "" || password === ""}
+        disabled={!!emailError || !!passwordError || !email || !password}
       >
         <Text style={styles.signInText}>SIGN IN</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}> 
+      <TouchableOpacity onPress={() => navigation.navigate("ForgotPassword")}>
         <Text style={styles.forgotPassword}>Forgot Password?</Text>
       </TouchableOpacity>
-      
+
       <TouchableOpacity onPress={() => navigation.navigate("VendorSignup")}>
         <Text style={styles.signUp}>Sign Up</Text>
       </TouchableOpacity>
@@ -100,7 +151,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     fontSize: 16,
     fontFamily: "Poppins_400Regular",
-    marginBottom: 15,
+    marginBottom: 5,
     color: "#000",
   },
   passwordContainer: {
@@ -109,7 +160,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#ccc",
     paddingVertical: 8,
-    marginBottom: 20,
+    marginBottom: 5,
   },
   inputPassword: {
     flex: 1,
@@ -121,7 +172,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   signInButton: {
-    backgroundColor: "#000",
+    backgroundColor: "black",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
@@ -147,6 +198,12 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_700Bold",
     color: "#ff6600",
     textAlign: "center",
+  },
+  errorText: {
+    fontSize: 12,
+    color: "red",
+    fontFamily: "Poppins_400Regular",
+    marginBottom: 10,
   },
 });
 

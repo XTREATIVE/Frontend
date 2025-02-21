@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   button: {
-    backgroundColor: '#B14228', // Dark Orange
+    backgroundColor: '#f9622c', // Dark Orange
     paddingVertical: 15,
     paddingHorizontal: 30,
     borderRadius: 5,

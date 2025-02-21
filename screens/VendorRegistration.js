@@ -1,197 +1,153 @@
 import React, { useState } from "react";
-import Checkbox from "expo-checkbox";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Modal } from "react-native";
-import { useFonts, Poppins_400Regular } from "@expo-google-fonts/poppins";
-import Icon from 'react-native-vector-icons/FontAwesome'; // Import FontAwesome icons
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from "react-native";
+import axios from "axios";
 
 const VendorRegistration = ({ navigation }) => {
-  const [isChecked, setIsChecked] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false); 
-
-  let [fontsLoaded] = useFonts({
-    Poppins_400Regular,
+  const [form, setForm] = useState({
+    username: "",
+    email: "",
+    phone_number: "",
+    password: "",
+    shop_name: "",
+    shop_address: "",
+    shop_description: "",
   });
 
-  if (!fontsLoaded) {
-    return null;
-  }
+  const [verificationCode, setVerificationCode] = useState("");
+  const [isVerificationStep, setIsVerificationStep] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+
+  const handleChange = (name, value) => {
+    setForm({ ...form, [name]: value });
+  };
+
+  // const handleRegister = async () => {
+  //   try {
+  //     console.log("Sending registration data:", form);
+  //     const response = await axios.post("http://192.168.28.85:8000/register/vendor/", form);
+      
+  //     if (response.data.success) {
+  //       Alert.alert("Success", "Registration submitted! Check your email for the verification code.");
+  //       setRegisteredEmail(form.email);
+  //       setIsVerificationStep(true); // Redirect to verification step
+  //       setVerificationError(""); // Clear any previous error
+  //     } else {
+  //       Alert.alert("Error", response.data.message || "Registration failed.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Registration error:", error);
+  //     Alert.alert("Error", error.response?.data?.error || "Registration failed.");
+  //   }
+  // };
+
+
+  const handleRegister = async () => {
+    try {
+        console.log("Sending registration data:", form);
+
+        const response = await fetch("http://192.168.28.85:8000/register/vendor/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(form)
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+            Alert.alert("Success", "Registration submitted! Check your email for the verification code.");
+            setRegisteredEmail(form.email);
+            setIsVerificationStep(true); // Redirect to verification step
+            setVerificationError(""); // Clear any previous error
+        } else {
+            Alert.alert("Error", data.message || "Registration failed.");
+        }
+    } catch (error) {
+        console.error("Registration error:", error);
+        Alert.alert("Error", "Registration failed. Please try again.");
+    }
+};
+
+
+  const handleVerify = async () => {
+    try {
+      console.log("Verifying email:", registeredEmail, "with code:", verificationCode);
+      const response = await axios.post("http://192.168.28.85:8000/verify-otp", {
+        email: registeredEmail,
+        verification_code: verificationCode,
+      });
+
+      if (response.data.success) {
+        Alert.alert("Success", "Verification successful! Redirecting to dashboard.");
+        navigation.navigate("Dashboard"); // Navigate to dashboard after successful verification
+      } else {
+        setVerificationError("Invalid verification code. Please try again.");
+      }
+    } catch (error) {
+      console.error("Verification error:", error);
+      setVerificationError(error.response?.data?.error || "Invalid verification code.");
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
         <Image source={require("../assets/logo.png")} style={styles.logo} />
-        <Text style={styles.brandName}>REGISTER AS A VENDOR</Text>
+        <Text style={styles.brandName}>
+          {isVerificationStep ? "Verify Your Account" : "Register as a Vendor"}
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollViewContent}>
-        <View style={styles.section}>
-          <Text style={styles.subHeader}>Personal Information</Text>
-          <TextInput style={styles.input} placeholder="First Name" />
-          <TextInput style={styles.input} placeholder="Last Name" />
-          <TextInput style={styles.input} placeholder="Phone number" keyboardType="phone-pad" />
-          <TextInput style={styles.input} placeholder="Password" secureTextEntry autoCapitalize="none" />
-          <TextInput style={styles.input} placeholder="Confirm Password" secureTextEntry autoCapitalize="none" />
-        </View>
+        {!isVerificationStep ? (
+          <>
+            <TextInput style={styles.input} placeholder="Username" onChangeText={(text) => handleChange("username", text)} />
+            <TextInput style={styles.input} placeholder="Email" keyboardType="email-address" onChangeText={(text) => handleChange("email", text)} />
+            <TextInput style={styles.input} placeholder="Phone Number" keyboardType="phone-pad" onChangeText={(text) => handleChange("phone_number", text)} />
+            <TextInput style={styles.input} placeholder="Password" secureTextEntry onChangeText={(text) => handleChange("password", text)} />
+            <TextInput style={styles.input} placeholder="Shop Name" onChangeText={(text) => handleChange("shop_name", text)} />
+            <TextInput style={styles.input} placeholder="Shop Address" onChangeText={(text) => handleChange("shop_address", text)} />
+            <TextInput style={styles.input} placeholder="Shop Description" multiline onChangeText={(text) => handleChange("shop_description", text)} />
 
-        <View style={styles.section}>
-          <Text style={styles.subHeader}>Shop Information</Text>
-          <TextInput style={styles.input} placeholder="Shop Name" />
-          <TextInput style={styles.input} placeholder="Shop's Address" />
-          <TextInput style={styles.input} placeholder="Shop Description" multiline />
-        </View>
-
-        
-        // Inside VendorRegistration, modify the Registration button to navigate to AgreeScreen
-<TouchableOpacity 
-  style={styles.button} 
-  onPress={() => navigation.navigate('TremScreen')}>
-  <Text style={styles.buttonText}>I Agree to the Terms and Conditions</Text>
-</TouchableOpacity>
-
-
-        <TouchableOpacity style={styles.button} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Register</Text>
-        </TouchableOpacity>
-      </ScrollView>
-
-      <Modal transparent={true} visible={modalVisible} animationType="fade">
-        <View style={styles.overlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalText}>
-              Thank you for registering!{"\n"}
-            </Text>
-            
-            {/* Success Icon for submission */}
-            <Icon name="check-circle" size={40} color="green" style={styles.icon} />
-            
-            <Text style={styles.pendingText}>
-              Registration is pending...
-            </Text>
-
-            {/* Pending Icon */}
-            <Icon name="hourglass-half" size={40} color="orange" style={styles.icon} />
-
-            <TouchableOpacity style={styles.button} onPress={() => { 
-              setModalVisible(false); 
-              navigation.navigate("Pending"); // Navigate to Pending screen
-            }}>
-              <Text style={styles.buttonText}>Cancel</Text>
+            <TouchableOpacity style={styles.button} onPress={handleRegister}>
+              <Text style={styles.buttonText}>Register</Text>
             </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+          </>
+        ) : (
+          <>
+            <Text style={styles.infoText}>Enter the verification code sent to your email.</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Verification Code"
+              keyboardType="numeric"
+              onChangeText={setVerificationCode}
+            />
+
+            {verificationError ? <Text style={styles.errorText}>{verificationError}</Text> : null}
+
+            <TouchableOpacity style={styles.button} onPress={handleVerify}>
+              <Text style={styles.buttonText}>Verify</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </ScrollView>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  logoContainer: {
-    alignItems: "center",
-    marginVertical: 5,
-  },
-  logo: {
-    width: 120,
-    height: 50,
-    resizeMode: "contain",
-  },
-  brandName: {
-    fontSize: 20,
-    fontFamily: "Poppins_400Regular",
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: 5,
-  },
-  scrollViewContent: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-  },
-  section: {
-    backgroundColor: "#f9f9f9",
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  subHeader: {
-    fontSize: 18,
-    fontFamily: "Poppins_400Regular",
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 5,
-    padding: 10,
-    fontSize: 16,
-    fontFamily: "Poppins_400Regular",
-    marginBottom: 10,
-    backgroundColor: "#fff",
-  },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  checkboxText: {
-    fontFamily: "Poppins_400Regular",
-    marginLeft: 8,
-  },
-  button: {
-    backgroundColor: "#ff6600",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    fontSize: 16,
-    fontFamily: "Poppins_400Regular",
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  footer: {
-    height: 40,
-    backgroundColor: "#333",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  footerText: {
-    fontSize: 14,
-    color: "#fff",
-    fontFamily: "Poppins_400Regular",
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Dim background
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContainer: {
-    backgroundColor: "#fff",
-    padding: 20,
-    borderRadius: 10,
-    width: "80%",
-    alignItems: "center",
-  },
-  modalText: {
-    textAlign: "center",
-    fontSize: 16,
-    marginBottom: 20,
-    fontFamily: "Poppins_400Regular",
-  },
-  pendingText: {
-    fontSize: 16,
-    color: "gray",
-    marginBottom: 20,
-    fontFamily: "Poppins_400Regular",
-  },
-  icon: {
-    marginBottom: 10,
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
+  logoContainer: { alignItems: "center", marginVertical: 10 },
+  logo: { width: 120, height: 50, resizeMode: "contain" },
+  brandName: { fontSize: 20, fontWeight: "bold", textAlign: "center", marginTop: 5 },
+  scrollViewContent: { paddingHorizontal: 15, paddingVertical: 10 },
+  input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 5, padding: 10, fontSize: 16, marginBottom: 10, backgroundColor: "#fff" },
+  button: { backgroundColor: "#ff6600", padding: 12, borderRadius: 8, alignItems: "center", marginTop: 10 },
+  buttonText: { fontSize: 16, color: "#fff", fontWeight: "bold" },
+  infoText: { textAlign: "center", fontSize: 16, marginBottom: 10, color: "#555" },
+  errorText: { color: "red", textAlign: "center", marginBottom: 10, fontSize: 14 },
 });
 
 export default VendorRegistration;

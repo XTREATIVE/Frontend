@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 
 export default function TremScreen({ navigation }) {
-  const [readFullTerms, setReadFullTerms] = useState(false);
+  const [readFullTerms, setReadFullTerms] = useState(false); // Track if the terms are fully read
 
   const handleReadFullTerms = () => {
-    setReadFullTerms(true); // Mark as read once the button is clicked
+    setReadFullTerms(true); // Set as true when the user reads full terms
   };
 
   return (
@@ -22,24 +22,25 @@ export default function TremScreen({ navigation }) {
         </Text>
       </ScrollView>
 
+      {/* Read Full Terms Button */}
       <TouchableOpacity style={styles.readMoreButton} onPress={handleReadFullTerms}>
         <Text style={styles.readMoreText}>Read Full Terms</Text>
       </TouchableOpacity>
+
+      {/* I Agree Button */}
       <TouchableOpacity
-            style={[styles.button, { backgroundColor: readFullTerms ? '#4D72C9' : '#ccc' }]}
-            onPress={() => {
-                if (readFullTerms) {
-                navigation.navigate('VendorSignup'); // Navigate directly to VendorRegistration
-                }
-            }}
-            disabled={!readFullTerms} // Disables the button until terms are agreed
-            >
-            <Text style={styles.buttonText}>I Agree</Text>
-</TouchableOpacity>
+        style={[styles.button, { backgroundColor: readFullTerms ? '#f9622c' : '#ccc' }]}
+        onPress={() => {
+          if (readFullTerms) {
+            navigation.navigate('VendorSignup'); // Navigate directly to VendorSignup (Vendor Registration)
+          }
+        }}
+        disabled={!readFullTerms} // Disable button if terms are not read
+      >
+        <Text style={styles.buttonText}>I Agree</Text>
+      </TouchableOpacity>
 
-
-
-
+      {/* Decline Button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.declineButton}>
         <Text style={styles.declineText}>Decline</Text>
       </TouchableOpacity>
