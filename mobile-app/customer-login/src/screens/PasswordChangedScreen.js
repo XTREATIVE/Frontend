@@ -44,20 +44,20 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
-    color: '#333',
+    color: '#280300',
   },
   message: {
     fontSize: 18,
     marginBottom: 40,
     textAlign: 'center',
-    color: '#555',
+    color: 'black',
     paddingHorizontal: 20,
   },
   button: {
-    backgroundColor: '#B14228', // Dark Orange
+    backgroundColor: '#f9622c', // Dark Orange
     paddingVertical: 15,
     paddingHorizontal: 30,
-    borderRadius: 5,
+    borderRadius: 15,
     alignItems: 'center',
     width: '80%',
   },

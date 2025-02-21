@@ -1,10 +1,41 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 
 export default function VerificationScreen({ navigation }) {
+  const [otp, setOtp] = useState('');
+
+  // Function to verify OTP
+  const verifyOtp = async () => {
+    if (!otp) {
+      Alert.alert('Error', 'Please enter the verification code.');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://127.0.0.1:8000/verify-otp/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ otp }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        Alert.alert('Success', 'OTP Verified Successfully!');
+        navigation.navigate('Congratulations'); // Navigate after success
+      } else {
+        Alert.alert('Error', data.message || 'Invalid OTP. Try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Try again.');
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Logo Container */}
+      {/* Logo */}
       <View style={styles.logoContainer}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
       </View>
@@ -15,11 +46,10 @@ export default function VerificationScreen({ navigation }) {
           style={styles.input}
           placeholder="Verification Code"
           keyboardType="numeric"
+          value={otp}
+          onChangeText={setOtp}
         />
-        <TouchableOpacity
-          style={styles.button}
-          onPress={() => navigation.navigate('Congratulations')}
-        >
+        <TouchableOpacity style={styles.button} onPress={verifyOtp}>
           <Text style={styles.buttonText}>Verify</Text>
         </TouchableOpacity>
       </View>
@@ -32,7 +62,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#f7f7f7',
+    backgroundColor: '#fff',
   },
   logoContainer: {
     alignItems: 'center',
@@ -68,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fafafa',
   },
   button: {
-    backgroundColor: '#B14228',
+    backgroundColor: '#f9622c',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',

@@ -1,27 +1,63 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Image } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import React, { useState } from 'react';
+import { 
+  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, 
+  Image, Alert 
+} from 'react-native';
+import CountryPicker from 'react-native-country-picker-modal';
 
-export default function SignUpScreen({ navigation, route }) {
-  const [customerName, setCustomerName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [city, setCity] = useState('');
-  const [region, setRegion] = useState('');
-  const [extraInfo, setExtraInfo] = useState('');
-  const [agreed, setAgreed] = useState(route.params?.agreed || false);
-  const [selectedCountryCode, setSelectedCountryCode] = useState('+256');
+export default function SignUpScreen({ navigation }) {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    phoneNumber: '',
+    city: '',
+    region: '',
+    address: '',
+    countryCode: 'UG',
+    callingCode: '+256',
+    flag: { uri: 'https://flagcdn.com/w320/ug.png' }
+  });
+  const [visible, setVisible] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const countryData = [
-    { label: 'Uganda (+256)', value: '+256', flag: require('../../assets/uganda.png') },
-    { label: 'Rwanda (+250)', value: '+250', flag: require('../../assets/rwanda.png') },
-  ];
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+  };
 
-  useEffect(() => {
-    if (route.params?.agreed) {
-      setAgreed(true);
+  const validateFields = () => {
+    const { firstName, lastName, email, phoneNumber, address } = formData;
+    if (!firstName.trim()) return 'First name is required';
+    if (!lastName.trim()) return 'Last name is required';
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Valid email is required';
+    if (!phoneNumber.trim() || !/^[0-9]+$/.test(phoneNumber)) return 'Valid phone number is required';
+    if (!address.trim()) return 'Address is required';
+    return null;
+  };
+
+  const handleRegister = async () => {
+    const errorMessage = validateFields();
+    if (errorMessage) {
+      Alert.alert('Validation Error', errorMessage);
+      return;
     }
-  }, [route.params?.agreed]);
+
+    setLoading(true);
+    try {
+      const response = await fetch('http://<your_ip>:8000/register/customer/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+      response.ok ? navigation.navigate('Verification') : Alert.alert('Registration Failed', result.message || 'Unknown error');
+    } catch (error) {
+      Alert.alert('Error', error.message || 'Network issue');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
@@ -29,108 +65,85 @@ export default function SignUpScreen({ navigation, route }) {
         <View style={styles.logoContainer}>
           <Image source={require('../../assets/logo.png')} style={styles.logo} />
         </View>
-
         <Text style={styles.title}>BECOME A CUSTOMER</Text>
         <Text style={styles.subtitle}>Create your account</Text>
-
-        <TextInput style={styles.input} placeholder="Customer Name" value={customerName} onChangeText={setCustomerName} />
-        <TextInput style={styles.input} placeholder="Email Address" value={email} onChangeText={setEmail} keyboardType="email-address" />
-
+        
+        {['firstName', 'lastName', 'email', 'address'].map((field) => (
+          <View key={field}>
+            <Text style={styles.label}>{field.replace(/([A-Z])/g, ' $1')}</Text>
+            <TextInput 
+              style={styles.input} 
+              placeholder={field.replace(/([A-Z])/g, ' $1')} 
+              value={formData[field]} 
+              onChangeText={(value) => handleChange(field, value)}
+              keyboardType={field === 'email' ? 'email-address' : 'default'}
+            />
+          </View>
+        ))}
+        
         <Text style={styles.label}>Phone Number</Text>
         <View style={styles.phoneContainer}>
-          <Image source={countryData.find(country => country.value === selectedCountryCode)?.flag} style={styles.flag} />
-          <Text style={styles.countryCode}>{selectedCountryCode}</Text>
-          <Picker selectedValue={selectedCountryCode} style={styles.picker} onValueChange={(itemValue) => setSelectedCountryCode(itemValue)}>
-            {countryData.map((country, index) => (
-              <Picker.Item key={index} label={country.label} value={country.value} />
-            ))}
-          </Picker>
-          <TextInput style={[styles.input, styles.phoneInput]} placeholder="Enter phone number" value={phoneNumber} onChangeText={setPhoneNumber} keyboardType="phone-pad" />
-        </View>
-
-        <TextInput style={styles.input} placeholder="City" value={city} onChangeText={setCity} />
-        <TextInput style={styles.input} placeholder="Region" value={region} onChangeText={setRegion} />
-       
-        {/* Agree to Terms Button */}
-        {!agreed && (
-          <TouchableOpacity onPress={() => navigation.navigate('AgreeScreen')} style={styles.agreeButton}>
-            <Text style={styles.agreeText}>Agree to Terms and Conditions</Text>
+          <TouchableOpacity onPress={() => setVisible(true)} style={styles.countryPickerContainer}>
+            <CountryPicker
+              withFilter withFlag withCallingCode withModal
+              onSelect={(country) => setFormData({
+                ...formData,
+                countryCode: country.cca2,
+                callingCode: `+${country.callingCode[0]}`,
+                flag: { uri: `https://flagcdn.com/w320/${country.cca2.toLowerCase()}.png` }
+              })}
+              visible={visible} onClose={() => setVisible(false)}
+            />
+            <Image source={formData.flag} style={styles.flag} />
           </TouchableOpacity>
-        )}
-
-        {/* Register Button */}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: agreed ? '#B14228' : '#ccc' }]}
-          onPress={() => {
-            if (!agreed) {
-              navigation.navigate('AgreeScreen');
-            } else {
-              navigation.navigate('Verification');
-            }
-          }}
-          disabled={!agreed}
-        >
-          <Text style={styles.buttonText}>Register</Text>
+          <Text style={styles.callingCode}>{formData.callingCode}</Text>
+          <TextInput 
+            style={styles.phoneInput} 
+            placeholder="Your phone number" 
+            value={formData.phoneNumber} 
+            onChangeText={(value) => handleChange('phoneNumber', value)}
+            keyboardType="phone-pad"
+          />
+        </View>
+        
+        {['city', 'region'].map((field) => (
+          <View key={field}>
+            <Text style={styles.label}>{field.replace(/([A-Z])/g, ' $1')}</Text>
+            <TextInput 
+              style={styles.input} 
+              placeholder={field.replace(/([A-Z])/g, ' $1')} 
+              value={formData[field]} 
+              onChangeText={(value) => handleChange(field, value)}
+            />
+          </View>
+        ))}
+        
+        <TouchableOpacity style={styles.button} onPress={handleRegister} disabled={loading}>
+          <Text style={styles.buttonText}>{loading ? 'Registering...' : 'Register'}</Text>
         </TouchableOpacity>
-
+        
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
           <Text style={styles.linkText}>Already have an account? Log in</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
-}const styles = StyleSheet.create({
-  
-  formContainer: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: 'white', borderRadius: 10, elevation: 5, margin: 10 },
-  logoContainer: { alignItems: 'center', marginBottom: 20 },
-  logo: { width: 100, height: 100, resizeMode: 'contain' },
-  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 10, color: '#333' },
-  subtitle: { fontSize: 18, textAlign: 'center', marginBottom: 20, color: '#555' },
-  input: { height: 50, borderColor: '#ccc', borderWidth: 1, borderRadius: 5, marginBottom: 12, paddingLeft: 15, backgroundColor: '#fafafa' },
-  agreeButton: { backgroundColor: '#4D72C9', padding: 12, borderRadius: 5, marginBottom: 15, alignItems: 'center' },
-  agreeText: { color: 'white', fontSize: 16, textAlign: 'center', fontWeight: 'bold' },
-  button: { padding: 15, borderRadius: 5, alignItems: 'center', marginTop: 20 },
-  buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
-  linkText: { color: '#007BFF', textAlign: 'center', marginTop: 10, fontSize: 16 },
+}
 
-  
-  /** Updated Phone Input Styling **/
-  phoneContainer: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'flex-start',  /* Aligns items to the left, prevents stretching */
-    borderWidth: 1, 
-    borderColor: '#ccc', 
-    borderRadius: 5, 
-    backgroundColor: '#fafafa', 
-    marginBottom: 12, 
-    paddingHorizontal: 10,  /* Adds space inside the container */
-    maxWidth: 350,  /* Limiting the max width of the container */
-    alignSelf: 'center',  /* Centers the container horizontally */
-  },
-  
-  flag: { 
-    width: 24, 
-    height: 16, 
-    resizeMode: 'contain', 
-    marginRight: 5 
-  },
-  countryCode: { 
-    fontSize: 14, 
-    fontWeight: 'bold', 
-    marginRight: 5 
-  },
-  picker: { 
-    width: 30, 
-    height: 40, 
-    marginRight: 5 
-  },
-  phoneInput: { 
-    flex: 1, 
-    height: 40, 
-    borderLeftWidth: 1, 
-    borderLeftColor: '#ccc', 
-    paddingLeft: 10,
-     
-  }
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: 'white' },
+  formContainer: { flex: 1, padding: 20, backgroundColor: 'white', borderRadius: 10, margin: 10 },
+  logoContainer: { alignItems: 'center', marginBottom: 10 },
+  logo: { width: 100, height: 100, resizeMode: 'contain' },
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 10, color: '#280300' },
+  subtitle: { fontSize: 20, textAlign: 'center', marginBottom: 20, color: '#280300' },
+  label: { fontSize: 16, fontWeight: 'bold', marginBottom: 5 },
+  input: { height: 50, borderColor: '#f9622c', borderWidth: 1, borderRadius: 5, marginBottom: 15, paddingLeft: 15 },
+  phoneContainer: { flexDirection: 'row', alignItems: 'center', borderColor: '#f9622c', borderWidth: 1, borderRadius: 5, paddingLeft: 10, backgroundColor: '#fff', height: 50 },
+  flag: { width: 30, height: 20, marginRight: 5 },
+  callingCode: { fontSize: 16, marginLeft: 5 },
+  phoneInput: { flex: 1, fontSize: 16, paddingLeft: 10 },
+  button: { padding: 10, borderRadius: 10, backgroundColor: '#f9622c', alignItems: 'center', marginTop: 20 },
+  buttonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
+  linkText: { color: '#280300', textAlign: 'center', marginTop: 10, fontSize: 18, fontWeight: 'bold' }
 });

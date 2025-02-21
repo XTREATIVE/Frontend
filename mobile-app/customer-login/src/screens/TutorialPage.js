@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
     color: '#555',
   },
   finishButton: {
-    backgroundColor: '#4D72C9', // Dark Orange
+    backgroundColor: '#f9622c', // Dark Orange
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',

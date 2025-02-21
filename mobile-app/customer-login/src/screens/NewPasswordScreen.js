@@ -10,7 +10,11 @@ export default function NewPasswordScreen({ navigation }) {
       </View>
 
       <Text style={styles.title}>Create New Password</Text>
+
+            <Text style={styles.label}>New Password</Text>
       <TextInput style={styles.input} placeholder="New Password" secureTextEntry />
+
+            <Text style={styles.label}>Confirm Password</Text>
       <TextInput style={styles.input} placeholder="Confirm Password" secureTextEntry />
 
       <TouchableOpacity 
@@ -32,7 +36,7 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 0,
   },
   logo: {
     width: 100,
@@ -44,22 +48,31 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    color: '#280300',
+  },
+  label: {
+    fontSize: 16,
+    color: 'black',
+    marginBottom: 5,
+    fontWeight: 'semibold',
+    marginBottom: 6,
+    alignSelf: 'flex-start', // Ensures the label aligns to the left
   },
   input: {
     height: 50,
-    borderColor: '#ccc',
+    borderColor: '#f9622c',
     borderWidth: 1,
     borderRadius: 5,
-    marginBottom: 10,
+    marginBottom: 17,
     paddingLeft: 10,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: 'white',
   },
   button: {
-    backgroundColor: '#4D72C9',
+    backgroundColor: '#f9622c',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 15,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 10,
   },
   buttonText: {
     color: 'white',

@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     flex: 1,
-    backgroundColor: '#2E5AC0', // Dark Orange for Login
+    backgroundColor: 'black', // Dark Orange for Login
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
   tutorialButton: {
     flex: 1,
-    backgroundColor: '#B14228', // Bright Orange for Tutorial
+    backgroundColor: '#f9622c', // Bright Orange for Tutorial
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
